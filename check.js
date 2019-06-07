@@ -16,13 +16,16 @@ function request(id) {
     return new Promise(function(resolve, reject){
         let data = '';
         const cb = res => res.on('data', chunk => (data += chunk)).on('end', () => resolve(JSON.parse(data)));
-        https.get(options, cb).on('error', e => reject(e));
+        https.get(options, cb).on('error', e => reject(e, data));
     });
 }
 
 function get(imei){
     const prepare = result => ({...result, data: {...result.data, imei}});
-    return request(imei).then(prepare);
+    return request(imei).then(prepare).catch(function(e, data){
+        console.error('error response: ', imei)
+        console.log(data)
+    });
 }
 
 function check(imei){
