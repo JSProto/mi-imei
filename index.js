@@ -31,7 +31,7 @@ bot.on('message', function(msg) {
         console.log(`request ${msg.chat.username} (${msg.chat.id}):\n${msg.text}\n`)
         console.log(`response ${msg.chat.username} (${msg.chat.id}):\n`)
 
-        bot.sendMessage(msg.chat.id, 'wait').then(msg => {
+        bot.sendMessage(msg.chat.id, 'wait...').then(msg => {
             function send(){
                 const message = objectToString(pairs);
 
