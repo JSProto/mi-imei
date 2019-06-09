@@ -25,8 +25,6 @@ bot.on('message', function(msg) {
         let rows = stringToArray(msg.text).filter(i => i.length = 15);
         let pairs = arrayToObject(rows);
 
-        console.log('pairs:', pairs);
-
 
         console.log(`request ${msg.chat.username} (${msg.chat.id}):\n${msg.text}\n`)
         console.log(`response ${msg.chat.username} (${msg.chat.id}):\n`)
