@@ -6,27 +6,56 @@ const EVIL = '\u{1F608}';
 const LOCK = '\u{26D4}';
 const UNLOCK = '\u{2714}';
 
+const wait = (duration = 1000) => new Promise((resolve, reject) => setTimeout(resolve, duration));
+
+function stringToArray(string){
+    return string.split('\n').map(t => t.trim())
+}
+function arrayToObject(array){
+    return array.reduce((memo, key) => ({...memo, [key]: null}), {})
+}
+
+function objectToString(object){
+    return Object.keys(object).map((v) => `${v}: ${object[v] === null ? '?' : (object[v] ? LOCK : EVIL)}`).join('\n');
+}
+
+
 bot.on('message', function(msg) {
     try {
-        let imei = msg.text.split('\n').map(text => text.trim());
-        imei = imei.filter(i => i.length = 15);
+        let rows = stringToArray(msg.text).filter(i => i.length = 15);
+        let pairs = arrayToObject(rows);
+
+        console.log('pairs:', pairs);
+
 
         console.log(`request ${msg.chat.username} (${msg.chat.id}):\n${msg.text}\n`)
+        console.log(`response ${msg.chat.username} (${msg.chat.id}):\n`)
 
-        if (imei.length > 10) {
-            bot.sendMessage(msg.chat.id, 'The number of IMEI should not exceed 10');
-            return;
-        }
+        bot.sendMessage(msg.chat.id, 'wait').then(msg => {
+            function send(){
+                const message = objectToString(pairs);
 
-        check(imei).then(result => {
-            const message = result.map(({data}) => `${data.imei}: ${data.locked ? LOCK : EVIL}`).join('\n')
+                return bot.editMessageText(message, {
+                    chat_id: msg.chat.id,
+                    message_id: msg.message_id,
+                }).then(wait);
+            }
 
-            console.log(`response ${msg.chat.username} (${msg.chat.id}):\n${message}\n`)
+            rows.reduce((promise, imei) => {
+                return promise.then(() => check(imei).then(({data}) => {
+                    pairs[imei] = data.locked;
+                    console.log(`${imei}: ${data.locked ? LOCK : UNLOCK}`);
+                    return send();
+                }))
+            }, Promise.resolve()).then(() => {
+                console.log('finish')
+            }).catch((e) => {
+                console.log('error: ', e.message)
+                return bot.sendMessage(msg.chat.id, 'error: ' + e.message)
+            })
 
-            bot.sendMessage(msg.chat.id, message);
-        }).catch(e => {
-            bot.sendMessage(msg.chat.id, `error: ${e.message}`);
         });
+
     }
     catch (e) {
         bot.sendMessage(msg.chat.id, `error: ${e.message}`);

@@ -15,27 +15,25 @@ function request(id) {
 
     return new Promise(function(resolve, reject){
         let data = '';
-        const cb = res => res.on('data', chunk => (data += chunk)).on('end', () => resolve(JSON.parse(data)));
+        const cb = res => res.on('data', chunk => (data += chunk)).on('end', () => resolve(data));
         https.get(options, cb).on('error', e => reject(e, data));
     });
 }
 
-function get(imei){
+function check(imei){
     const prepare = result => ({...result, data: {...result.data, imei}});
-    return request(imei).then(prepare).catch(function(e, data){
-        console.error('error response: ', imei)
-        console.log(data)
+    return request(imei).then( data => {
+        return new Promise(function(resolve, reject){
+            try {
+                resolve(prepare(JSON.parse(data)))
+            }
+            catch(e) {
+                console.log('dump:', data);
+                reject(e, data)
+            }
+        })
     });
 }
 
-function check(imei){
-    if (!Array.isArray(imei)) {
-        imei = [imei]
-    }
-
-    return imei.reduce((p, i) => {
-        return p.then((total) => get(i).then(result => [ ...total, result ]));
-    }, Promise.resolve([]));
-}
 
 module.exports = check;
